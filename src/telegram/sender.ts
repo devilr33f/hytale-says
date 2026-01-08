@@ -18,11 +18,15 @@ export async function forwardMessage(opts: ForwardMessageOptions): Promise<void>
   const roleText = role ? ` (${escapeHtml(role)})` : ''
   const text = `<b>${escapeHtml(author)}</b>${roleText} in <code>#${escapeHtml(channel)}</code>\n${escapeHtml(content)}\n\n<a href="${messageLink}">Jump to message</a>`
 
+  // Enable link preview only if content has URLs (not just the discord jump link)
+  const hasLinks = /https?:\/\/\S+/i.test(content)
+
   await telegram.api.sendMessage({
     chat_id: config.telegram.chatId,
     text,
     message_thread_id: topicId,
-    parse_mode: 'HTML'
+    parse_mode: 'HTML',
+    link_preview_options: { is_disabled: !hasLinks },
   })
 
   if (attachments.length === 0)
