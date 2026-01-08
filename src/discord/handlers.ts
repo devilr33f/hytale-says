@@ -18,6 +18,10 @@ async function handleMessage(message: Message): Promise<void> {
   if (!message.guild)
     return
 
+  // Skip forwarded messages
+  if ((message.reference as any)?.type === 'FORWARD')
+    return
+
   const serverConfig = config.servers.find((s: { guildId: string }) => s.guildId === message.guild!.id)
   if (!serverConfig)
     return
