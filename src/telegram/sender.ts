@@ -1,16 +1,7 @@
 import type { ForwardMessageOptions } from '../types.js'
-import { Buffer } from 'node:buffer'
 import { MediaUpload } from 'wrappergram'
 import { config } from '../config.js'
 import { telegram } from './client.js'
-
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB Telegram limit
-
-interface DownloadedAttachment {
-  buffer: Buffer
-  name: string
-  contentType: string | null
-}
 
 export async function forwardMessage(opts: ForwardMessageOptions): Promise<void> {
   const { topicId, author, role, channel, content, attachments, messageLink } = opts
@@ -32,54 +23,32 @@ export async function forwardMessage(opts: ForwardMessageOptions): Promise<void>
   if (attachments.length === 0)
     return
 
-  // Download all attachments first
-  const downloaded: DownloadedAttachment[] = []
-  for (const att of attachments) {
-    try {
-      const response = await fetch(att.url)
-      const buffer = Buffer.from(await response.arrayBuffer())
-
-      if (buffer.length > MAX_FILE_SIZE) {
-        console.warn(`Skipping attachment ${att.name}: exceeds 50MB limit`)
-        continue
-      }
-
-      downloaded.push({ buffer, name: att.name, contentType: att.contentType })
-    }
-    catch (err) {
-      console.error(`Failed to download attachment ${att.name}:`, err)
-    }
-  }
-
-  if (downloaded.length === 0)
-    return
-
   // Separate media (photos/videos) from documents
-  const media: DownloadedAttachment[] = []
-  const documents: DownloadedAttachment[] = []
-
-  for (const att of downloaded) {
+  const media = attachments.filter((att) => {
     const isImage = att.contentType?.startsWith('image/')
     const isVideo = att.contentType?.startsWith('video/')
-
-    if (isImage || isVideo) {
-      media.push(att)
-    }
-    else {
-      documents.push(att)
-    }
-  }
+    return isImage || isVideo
+  })
+  const documents = attachments.filter((att) => {
+    const isImage = att.contentType?.startsWith('image/')
+    const isVideo = att.contentType?.startsWith('video/')
+    return !isImage && !isVideo
+  })
 
   // Send media as group or single
   if (media.length > 1) {
     try {
+      const mediaItems = await Promise.all(media.map(async (att) => {
+        const file = await MediaUpload.url(att.url)
+        return {
+          type: att.contentType?.startsWith('video/') ? 'video' as const : 'photo' as const,
+          media: file,
+        }
+      }))
       await telegram.api.sendMediaGroup({
         chat_id: config.telegram.chatId,
         message_thread_id: topicId,
-        media: media.map(att => ({
-          type: att.contentType?.startsWith('video/') ? 'video' : 'photo',
-          media: MediaUpload.buffer(att.buffer, att.name),
-        })),
+        media: mediaItems,
       })
     }
     catch (err) {
@@ -92,14 +61,14 @@ export async function forwardMessage(opts: ForwardMessageOptions): Promise<void>
       if (att.contentType?.startsWith('video/')) {
         await telegram.api.sendVideo({
           chat_id: config.telegram.chatId,
-          video: MediaUpload.buffer(att.buffer, att.name),
+          video: await MediaUpload.url(att.url),
           message_thread_id: topicId,
         })
       }
       else {
         await telegram.api.sendPhoto({
           chat_id: config.telegram.chatId,
-          photo: MediaUpload.buffer(att.buffer, att.name),
+          photo: await MediaUpload.url(att.url),
           message_thread_id: topicId,
         })
       }
@@ -114,7 +83,7 @@ export async function forwardMessage(opts: ForwardMessageOptions): Promise<void>
     try {
       await telegram.api.sendDocument({
         chat_id: config.telegram.chatId,
-        document: MediaUpload.buffer(att.buffer, att.name),
+        document: await MediaUpload.url(att.url),
         message_thread_id: topicId,
       })
     }
