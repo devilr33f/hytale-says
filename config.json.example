@@ -1,0 +1,15 @@
+{
+  "telegram": {
+    "chatId": "-100123456789"
+  },
+  "servers": [
+    {
+      "name": "Hytale",
+      "guildId": "123456789012345678",
+      "roles": [
+        { "id": "111111111111111111", "name": "Developer", "topicId": 5 },
+        { "id": "222222222222222222", "name": "Moderator", "topicId": 6 }
+      ]
+    }
+  ]
+}
