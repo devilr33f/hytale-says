@@ -15,7 +15,7 @@ interface MatchResult {
 }
 
 async function handleMessage(message: Message): Promise<void> {
-  if (!message.guild || !message.member)
+  if (!message.guild)
     return
 
   const serverConfig = config.servers.find((s: { guildId: string }) => s.guildId === message.guild!.id)
@@ -32,7 +32,7 @@ async function handleMessage(message: Message): Promise<void> {
     }
   }
 
-  if (!match && serverConfig.roles) {
+  if (!match && serverConfig.roles && message.member) {
     const roleMatch = findHighestPriorityRole(message.member.roles.cache, serverConfig.roles)
     if (roleMatch) {
       match = { topicId: roleMatch.topicId, label: roleMatch.name, type: 'role' }
