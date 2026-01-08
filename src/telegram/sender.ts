@@ -22,8 +22,7 @@ export async function forwardMessage(opts: ForwardMessageOptions): Promise<void>
     chat_id: config.telegram.chatId,
     text,
     message_thread_id: topicId,
-    parse_mode: 'HTML',
-    link_preview_options: { is_disabled: true },
+    parse_mode: 'HTML'
   })
 
   if (attachments.length === 0)
