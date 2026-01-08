@@ -4,10 +4,17 @@ export interface RoleConfig {
   topicId: number
 }
 
+export interface ChannelConfig {
+  id: string
+  name: string
+  topicId: number
+}
+
 export interface ServerConfig {
   name: string
   guildId: string
-  roles: RoleConfig[]
+  roles?: RoleConfig[]
+  channels?: ChannelConfig[]
 }
 
 export interface Config {
@@ -20,7 +27,7 @@ export interface Config {
 export interface ForwardMessageOptions {
   topicId: number
   author: string
-  role: string
+  role: string | null
   channel: string
   content: string
   attachments: AttachmentInfo[]

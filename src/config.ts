@@ -23,12 +23,27 @@ function loadConfig(): Config {
     if (!server.guildId) {
       throw new Error(`Server "${server.name}" missing guildId`)
     }
-    if (!Array.isArray(server.roles) || server.roles.length === 0) {
-      throw new Error(`Server "${server.name}" missing roles array`)
+
+    const hasRoles = Array.isArray(server.roles) && server.roles.length > 0
+    const hasChannels = Array.isArray(server.channels) && server.channels.length > 0
+
+    if (!hasRoles && !hasChannels) {
+      throw new Error(`Server "${server.name}" must have roles or channels configured`)
     }
-    for (const role of server.roles) {
-      if (!role.id || !role.name || typeof role.topicId !== 'number') {
-        throw new Error(`Invalid role config in server "${server.name}"`)
+
+    if (server.roles) {
+      for (const role of server.roles) {
+        if (!role.id || !role.name || typeof role.topicId !== 'number') {
+          throw new Error(`Invalid role config in server "${server.name}"`)
+        }
+      }
+    }
+
+    if (server.channels) {
+      for (const channel of server.channels) {
+        if (!channel.id || !channel.name || typeof channel.topicId !== 'number') {
+          throw new Error(`Invalid channel config in server "${server.name}"`)
+        }
       }
     }
   }

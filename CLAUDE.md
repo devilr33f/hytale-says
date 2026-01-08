@@ -12,29 +12,33 @@ pnpm lint     # ESLint check (npx eslint src/)
 
 ## Architecture
 
-Discord-to-Telegram message forwarder. Tracks messages from users with specific roles on Discord servers and forwards them to Telegram topics.
+Discord-to-Telegram message forwarder. Tracks messages from Discord servers and forwards them to Telegram topics.
 
 ```
 src/
 ├── index.ts              # Entry point, initializes clients
 ├── env.ts                # Environment variables (DISCORD_TOKEN, TELEGRAM_BOT_TOKEN)
-├── config.ts             # Loads config.json, validates server/role structure
+├── config.ts             # Loads config.json, validates server/role/channel structure
 ├── types.ts              # Shared TypeScript interfaces
 ├── discord/
 │   ├── client.ts         # discord.js-selfbot-v13 client
-│   └── handlers.ts       # messageCreate handler, role priority filtering
+│   └── handlers.ts       # messageCreate handler, channel/role matching
 └── telegram/
     ├── client.ts         # wrappergram client
     └── sender.ts         # Message forwarding, media group handling
 ```
 
-**Flow**: Discord messageCreate → filter by guild + role → find highest priority role → forward to Telegram topic with attachments
+**Flow**: Discord messageCreate → match by channel or role → forward to Telegram topic with attachments
 
-**Role Priority**: Users with multiple tracked roles → message goes to first matching role's topic (config array order = priority)
+**Matching Priority**:
+1. Channels checked first (if configured)
+2. Roles checked second (highest priority role = first in config array)
+
+Servers can have `channels`, `roles`, or both. Channel matches skip role display in Telegram message.
 
 ## Config
 
-- `config.json` - Server/role/topic mappings (see `config.json.example`)
+- `config.json` - Server/channel/role/topic mappings (see `config.json.example`)
 - `.env` - Tokens (see `.env.example`)
 
 ## Code Style

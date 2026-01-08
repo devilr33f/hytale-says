@@ -10,6 +10,24 @@
         { "id": "111111111111111111", "name": "Developer", "topicId": 5 },
         { "id": "222222222222222222", "name": "Moderator", "topicId": 6 }
       ]
+    },
+    {
+      "name": "Another Server (channel-based)",
+      "guildId": "987654321098765432",
+      "channels": [
+        { "id": "333333333333333333", "name": "announcements", "topicId": 7 },
+        { "id": "444444444444444444", "name": "dev-updates", "topicId": 8 }
+      ]
+    },
+    {
+      "name": "Mixed Server (both channels and roles)",
+      "guildId": "555555555555555555",
+      "channels": [
+        { "id": "666666666666666666", "name": "important", "topicId": 9 }
+      ],
+      "roles": [
+        { "id": "777777777777777777", "name": "Staff", "topicId": 10 }
+      ]
     }
   ]
 }

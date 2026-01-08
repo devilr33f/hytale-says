@@ -15,7 +15,8 @@ interface DownloadedAttachment {
 export async function forwardMessage(opts: ForwardMessageOptions): Promise<void> {
   const { topicId, author, role, channel, content, attachments, messageLink } = opts
 
-  const text = `<b>${escapeHtml(author)}</b> (${escapeHtml(role)}) in <code>#${escapeHtml(channel)}</code>\n${escapeHtml(content)}\n\n<a href="${messageLink}">Jump to message</a>`
+  const roleText = role ? ` (${escapeHtml(role)})` : ''
+  const text = `<b>${escapeHtml(author)}</b>${roleText} in <code>#${escapeHtml(channel)}</code>\n${escapeHtml(content)}\n\n<a href="${messageLink}">Jump to message</a>`
 
   await telegram.api.sendMessage({
     chat_id: config.telegram.chatId,

@@ -6,6 +6,6 @@ RUN corepack enable
 COPY . /app
 WORKDIR /app
 
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 CMD ["pnpm", "start"]
