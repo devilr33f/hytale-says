@@ -32,6 +32,11 @@ export interface ForwardMessageOptions {
   content: string
   attachments: AttachmentInfo[]
   messageLink: string
+  replyTo?: {
+    author: string
+    content: string
+    messageLink: string
+  }
 }
 
 export interface AttachmentInfo {

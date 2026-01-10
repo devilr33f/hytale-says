@@ -14,6 +14,12 @@ interface MatchResult {
   type: 'channel' | 'role'
 }
 
+interface ReplyInfo {
+  author: string
+  content: string
+  messageLink: string
+}
+
 async function handleMessage(message: Message): Promise<void> {
   if (!message.guild)
     return
@@ -55,6 +61,22 @@ async function handleMessage(message: Message): Promise<void> {
   const messageLink = `https://discord.com/channels/${message.guild.id}/${message.channel.id}/${message.id}`
   const channelName = 'name' in message.channel ? (message.channel.name ?? 'unknown') : 'DM'
 
+  // Fetch replied message if this is a reply
+  let replyTo: ReplyInfo | undefined
+  if (message.type === 'REPLY' && message.reference?.messageId) {
+    try {
+      const repliedMessage = await message.channel.messages.fetch(message.reference.messageId)
+      replyTo = {
+        author: repliedMessage.author.displayName ?? repliedMessage.author.username,
+        content: repliedMessage.content,
+        messageLink: `https://discord.com/channels/${message.reference.guildId}/${message.reference.channelId}/${message.reference.messageId}`,
+      }
+    }
+    catch {
+      // Replied message deleted or inaccessible
+    }
+  }
+
   try {
     await forwardMessage({
       topicId: match.topicId,
@@ -64,6 +86,7 @@ async function handleMessage(message: Message): Promise<void> {
       content: message.content,
       attachments,
       messageLink,
+      replyTo,
     })
     console.log(`Forwarded message from ${message.author.tag} (${match.type}: ${match.label}) in ${serverConfig.name}`)
   }

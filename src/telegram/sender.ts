@@ -4,10 +4,18 @@ import { config } from '../config.js'
 import { telegram } from './client.js'
 
 export async function forwardMessage(opts: ForwardMessageOptions): Promise<void> {
-  const { topicId, author, role, channel, content, attachments, messageLink } = opts
+  const { topicId, author, role, channel, content, attachments, messageLink, replyTo } = opts
+
+  let text = ''
+
+  // Add reply context as blockquote if present
+  if (replyTo) {
+    const replyContent = replyTo.content || '(no text)'
+    text += `<blockquote><b>${escapeHtml(replyTo.author)}</b>\n${escapeHtml(replyContent)}\n<a href="${replyTo.messageLink}">View original</a></blockquote>\n\n`
+  }
 
   const roleText = role ? ` (${escapeHtml(role)})` : ''
-  const text = `<b>${escapeHtml(author)}</b>${roleText} in <code>#${escapeHtml(channel)}</code>\n${escapeHtml(content)}\n\n<a href="${messageLink}">Jump to message</a>`
+  text += `<b>${escapeHtml(author)}</b>${roleText} in <code>#${escapeHtml(channel)}</code>\n${escapeHtml(content)}\n\n<a href="${messageLink}">Jump to message</a>`
 
   // Enable link preview only if content has URLs (not just the discord jump link)
   const hasLinks = /https?:\/\/\S+/i.test(content)
