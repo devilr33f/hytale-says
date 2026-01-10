@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 pnpm dev      # Run with hot-reload (development)
 pnpm start    # Run production
-pnpm lint     # ESLint check (npx eslint src/)
+npx eslint src/  # ESLint check
 ```
 
 ## Architecture
