@@ -15,6 +15,10 @@ function loadConfig(): Config {
     throw new Error('Config missing telegram.chatId')
   }
 
+  if (config.ignoredUserIds && !Array.isArray(config.ignoredUserIds)) {
+    throw new Error('ignoredUserIds must be an array')
+  }
+
   if (!Array.isArray(config.servers) || config.servers.length === 0) {
     throw new Error('Config missing servers array')
   }

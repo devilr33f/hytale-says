@@ -22,6 +22,7 @@ export interface Config {
     chatId: string
   }
   servers: ServerConfig[]
+  ignoredUserIds?: string[]
 }
 
 export interface ForwardMessageOptions {

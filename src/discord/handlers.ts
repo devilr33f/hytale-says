@@ -28,6 +28,9 @@ async function handleMessage(message: Message): Promise<void> {
   if ((message.reference as any)?.type === 'FORWARD')
     return
 
+  if (config.ignoredUserIds?.includes(message.author.id))
+    return
+
   const serverConfig = config.servers.find((s: { guildId: string }) => s.guildId === message.guild!.id)
   if (!serverConfig)
     return
