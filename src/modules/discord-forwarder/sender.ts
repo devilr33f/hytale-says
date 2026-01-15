@@ -1,17 +1,15 @@
-import type { ForwardMessageOptions } from '../types.js'
+import type { TelegramClient } from '../../core/telegram-client.js'
+import type { ForwardMessageOptions } from '../../types.js'
 import { MediaUpload } from 'wrappergram'
-import { config } from '../config.js'
-import { telegram } from './client.js'
 
-export async function forwardMessage(opts: ForwardMessageOptions): Promise<void> {
-  const { topicId, author, role, channel, content, attachments, messageLink, replyTo } = opts
+export async function forwardMessage(opts: ForwardMessageOptions & { telegram: TelegramClient }): Promise<void> {
+  const { telegram, topicId, chatId, author, role, channel, content, attachments, messageLink, replyTo } = opts
 
   let text = ''
 
   // Add reply context as blockquote if present
   if (replyTo) {
-    const replyContent = replyTo.content || '(no text)'
-    text += `<blockquote><b>${escapeHtml(replyTo.author)}</b>\n${escapeHtml(replyContent)}\n<a href="${replyTo.messageLink}">View original</a></blockquote>\n\n`
+    text += `<blockquote><b>${escapeHtml(replyTo.author)}</b>\n${escapeHtml(replyTo.content) || '(no text)'}\n<a href="${replyTo.messageLink}">View original</a></blockquote>\n\n`
   }
 
   const roleText = role ? ` (${escapeHtml(role)})` : ''
@@ -20,12 +18,12 @@ export async function forwardMessage(opts: ForwardMessageOptions): Promise<void>
   // Enable link preview only if content has URLs (not just the discord jump link)
   const hasLinks = /https?:\/\/\S+/i.test(content)
 
-  await telegram.api.sendMessage({
-    chat_id: config.telegram.chatId,
+  await telegram.sendMessage({
     text,
-    message_thread_id: topicId,
-    parse_mode: 'HTML',
-    link_preview_options: { is_disabled: !hasLinks },
+    chatIds: [chatId],
+    topicId,
+    parseMode: 'HTML',
+    disableLinkPreview: !hasLinks,
   })
 
   if (attachments.length === 0)
@@ -54,7 +52,7 @@ export async function forwardMessage(opts: ForwardMessageOptions): Promise<void>
         }
       }))
       await telegram.api.sendMediaGroup({
-        chat_id: config.telegram.chatId,
+        chat_id: chatId,
         message_thread_id: topicId,
         media: mediaItems,
       })
@@ -68,14 +66,14 @@ export async function forwardMessage(opts: ForwardMessageOptions): Promise<void>
     try {
       if (att.contentType?.startsWith('video/')) {
         await telegram.api.sendVideo({
-          chat_id: config.telegram.chatId,
+          chat_id: chatId,
           video: await MediaUpload.url(att.url),
           message_thread_id: topicId,
         })
       }
       else {
         await telegram.api.sendPhoto({
-          chat_id: config.telegram.chatId,
+          chat_id: chatId,
           photo: await MediaUpload.url(att.url),
           message_thread_id: topicId,
         })
@@ -90,7 +88,7 @@ export async function forwardMessage(opts: ForwardMessageOptions): Promise<void>
   for (const att of documents) {
     try {
       await telegram.api.sendDocument({
-        chat_id: config.telegram.chatId,
+        chat_id: chatId,
         document: await MediaUpload.url(att.url),
         message_thread_id: topicId,
       })

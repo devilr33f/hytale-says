@@ -1,25 +1,114 @@
+import type { Module } from './core/module.js'
 import process from 'node:process'
 import { config } from './config.js'
-import { discord, startDiscord } from './discord/client.js'
-import { setupHandlers } from './discord/handlers.js'
+import { StateStore } from './core/state-store.js'
+import { TelegramClient } from './core/telegram-client.js'
+import { TokenManager } from './core/token-manager.js'
 
-console.log(`Loaded ${config.servers.length} server(s) to track`)
+// Module factories
+import { discordForwarderFactory } from './modules/discord-forwarder/index.js'
+import { hytaleDownloaderFactory } from './modules/hytale-downloader/index.js'
+import { hytaleLauncherFactory } from './modules/hytale-launcher/index.js'
+import { hytalePatchesFactory } from './modules/hytale-patches/index.js'
+import { hytaleServerFactory } from './modules/hytale-server/index.js'
 
-setupHandlers()
+const MODULE_FACTORIES: Record<string, (config: unknown, deps: import('./core/module.js').ModuleDependencies) => Module> = {
+  'discord-forwarder': discordForwarderFactory,
+  'hytale-launcher': hytaleLauncherFactory,
+  'hytale-patches': hytalePatchesFactory,
+  'hytale-downloader': hytaleDownloaderFactory,
+  'hytale-server': hytaleServerFactory,
+}
 
-startDiscord().catch((err: unknown) => {
-  console.error('Failed to start Discord client:', err)
+async function main() {
+  // Initialize shared services
+  const telegram = new TelegramClient(config.telegram.botToken)
+  const tokenManager = new TokenManager()
+  const stateStore = new StateStore()
+
+  await stateStore.load()
+
+  // Register auth configs
+  if (config.hytaleAuth) {
+    for (const [key, authConfig] of Object.entries(config.hytaleAuth)) {
+      tokenManager.register(key, {
+        clientId: authConfig.clientId,
+        tokenEndpoint: authConfig.tokenEndpoint ?? 'https://oauth.accounts.hytale.com/oauth2/token',
+        tokenFile: authConfig.tokenFile,
+      })
+    }
+  }
+
+  // Initialize modules
+  const modules: Module[] = []
+  const logger = (module: string, message: string, ...args: unknown[]) => {
+    console.log(`[${module}] ${message}`, ...args)
+  }
+
+  const deps = {
+    telegram,
+    tokenManager,
+    stateStore,
+    logger,
+  }
+
+  for (const [moduleName, moduleConfig] of Object.entries(config.modules)) {
+    if (!moduleConfig.enabled) {
+      continue
+    }
+
+    const factory = MODULE_FACTORIES[moduleName]
+    if (!factory) {
+      console.warn(`No factory found for module: ${moduleName}`)
+      continue
+    }
+
+    const module = factory(moduleConfig, deps)
+    modules.push(module)
+    console.log(`Loaded module: ${module.name}`)
+  }
+
+  if (modules.length === 0) {
+    console.warn('No modules enabled, exiting')
+    process.exit(0)
+  }
+
+  // Start all modules
+  console.log(`Starting ${modules.length} module(s)...`)
+  for (const module of modules) {
+    try {
+      await module.start()
+    }
+    catch (err) {
+      console.error(`Failed to start module ${module.name}:`, err)
+      process.exit(1)
+    }
+  }
+
+  // Graceful shutdown
+  const shutdown = async () => {
+    console.log('Shutting down...')
+    await stateStore.flush()
+    tokenManager.stopAll()
+    telegram.destroy()
+
+    for (const module of modules) {
+      try {
+        await module.stop()
+      }
+      catch (err) {
+        console.error(`Error stopping module ${module.name}:`, err)
+      }
+    }
+
+    process.exit(0)
+  }
+
+  process.once('SIGINT', shutdown)
+  process.once('SIGTERM', shutdown)
+}
+
+main().catch((err) => {
+  console.error('Fatal error:', err)
   process.exit(1)
-})
-
-process.once('SIGINT', () => {
-  console.log('Shutting down...')
-  discord.destroy()
-  process.exit(0)
-})
-
-process.once('SIGTERM', () => {
-  console.log('Shutting down...')
-  discord.destroy()
-  process.exit(0)
 })

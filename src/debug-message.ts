@@ -1,6 +1,12 @@
-import process from 'node:process'
+import process, { env } from 'node:process'
 import { Client } from 'discord.js-selfbot-v13'
-import env from './env.js'
+
+const DISCORD_TOKEN = env['DISCORD_TOKEN']
+
+if (!DISCORD_TOKEN) {
+  console.error('DISCORD_TOKEN is not set')
+  process.exit(1)
+}
 
 const link = process.argv[2]
 if (!link) {

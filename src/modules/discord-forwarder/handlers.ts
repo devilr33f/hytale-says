@@ -1,12 +1,9 @@
-import type { Message } from 'discord.js-selfbot-v13'
-import type { AttachmentInfo, ChannelConfig, RoleConfig } from '../types.js'
-import { config } from '../config.js'
-import { forwardMessage } from '../telegram/sender.js'
-import { discord } from './client.js'
+import type { Client, Message } from 'discord.js-selfbot-v13'
 
-export function setupHandlers(): void {
-  discord.on('messageCreate', handleMessage)
-}
+import type { ModuleDependencies } from '../../core/module.js'
+import type { AttachmentInfo, ChannelConfig, DiscordForwarderConfig, RoleConfig } from '../../types.js'
+
+import { forwardMessage } from './sender.js'
 
 interface MatchResult {
   topicId: number
@@ -20,7 +17,19 @@ interface ReplyInfo {
   messageLink: string
 }
 
-async function handleMessage(message: Message): Promise<void> {
+export function setupHandlers(
+  discord: Client,
+  config: DiscordForwarderConfig,
+  deps: ModuleDependencies,
+): void {
+  discord.on('messageCreate', message => handleMessage(message, config, deps))
+}
+
+async function handleMessage(
+  message: Message,
+  config: DiscordForwarderConfig,
+  deps: ModuleDependencies,
+): Promise<void> {
   if (!message.guild)
     return
 
@@ -31,7 +40,7 @@ async function handleMessage(message: Message): Promise<void> {
   if (config.ignoredUserIds?.includes(message.author.id))
     return
 
-  const serverConfig = config.servers.find((s: { guildId: string }) => s.guildId === message.guild!.id)
+  const serverConfig = config.servers.find(s => s.guildId === message.guild!.id)
   if (!serverConfig)
     return
 
@@ -82,7 +91,9 @@ async function handleMessage(message: Message): Promise<void> {
 
   try {
     await forwardMessage({
+      telegram: deps.telegram,
       topicId: match.topicId,
+      chatId: config.chatId,
       author: message.author.displayName ?? message.author.username,
       role: match.type === 'role' ? match.label : null,
       channel: channelName,
@@ -91,10 +102,10 @@ async function handleMessage(message: Message): Promise<void> {
       messageLink,
       replyTo,
     })
-    console.log(`Forwarded message from ${message.author.tag} (${match.type}: ${match.label}) in ${serverConfig.name}`)
+    deps.logger('discord-forwarder', `Forwarded from ${message.author.tag} (${match.type}: ${match.label})`)
   }
   catch (err) {
-    console.error('Failed to forward message:', err)
+    deps.logger('discord-forwarder', `Failed to forward: ${err}`)
   }
 }
 
