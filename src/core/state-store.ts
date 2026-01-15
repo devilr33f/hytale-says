@@ -60,13 +60,17 @@ export class StateStore {
       return
     }
 
+    // Write full state, not just dirty keys (atomicity)
     const toSave: Record<string, unknown> = {}
-    for (const key of this.dirty) {
-      toSave[key] = this.state.get(key)
+    for (const [key, value] of this.state.entries()) {
+      toSave[key] = value
     }
 
     try {
-      await fs.writeFile(STATE_FILE, JSON.stringify(toSave, null, 2))
+      // Atomic write: temp file + rename
+      const tmpFile = `${STATE_FILE}.tmp`
+      await fs.writeFile(tmpFile, JSON.stringify(toSave, null, 2))
+      await fs.rename(tmpFile, STATE_FILE)
       this.dirty.clear()
     }
     catch (err) {
