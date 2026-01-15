@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
@@ -60,14 +61,32 @@ export class TokenManager {
       const content = await fs.readFile(tokenFile, 'utf-8')
       const data = JSON.parse(content)
 
+      let expiresAt: number
+      if (data.expires_at) {
+        expiresAt = data.expires_at
+      }
+      else {
+        // Decode JWT to get actual expiry from 'exp' claim
+        const parts = data.access_token.split('.')
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString())
+          expiresAt = payload.exp * 1000
+        }
+        else {
+          expiresAt = Date.now() + (data.expires_in ?? 3600) * 1000
+        }
+      }
+
       const tokens: TokenData = {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
-        expires_at: data.expires_at ?? (Date.now() + data.expires_in * 1000),
+        expires_at: expiresAt,
         scope: data.scope,
       }
 
       this.tokens.set(key, tokens)
+      // Save back with expires_at for future loads
+      await this.saveTokens(key)
       return tokens
     }
     catch (err) {
