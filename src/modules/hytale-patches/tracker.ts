@@ -81,10 +81,9 @@ export async function checkPatchesUpdate(
     // Update detected
     state[patchline] = { lastVersion: currentVersion, lastPatchId: patchId, lastCheck: new Date().toISOString() }
 
-    // Fetch patch size
-    const patchSize = lastState?.lastPatchId !== undefined
-      ? await getPatchSize(patchline, lastState.lastPatchId, patchId)
-      : undefined
+    // Fetch patch size (0 means no local installation)
+    const fromPatch = lastState?.lastPatchId ?? 0
+    const patchSize = await getPatchSize(patchline, fromPatch, patchId)
 
     updates.push({
       patchline,
