@@ -82,3 +82,22 @@ export interface HytalePatchesConfig extends HytaleTrackerConfig {
 export interface HytaleServerConfig extends HytaleTrackerConfig {
   patchlines: string[]
 }
+
+export interface ApiConfig extends ModuleConfig {
+  enabled: boolean
+  port: number
+  jwtSecret: string
+  accountUuid?: string
+}
+
+export interface JwtPayload {
+  scope: string
+  sub?: string
+  iat?: number
+  exp?: number
+}
+
+export interface ApiContext {
+  scope: string
+  sub?: string
+}

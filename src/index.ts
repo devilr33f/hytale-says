@@ -4,6 +4,7 @@ import { config } from './config.js'
 import { StateStore } from './core/state-store.js'
 import { TelegramClient } from './core/telegram-client.js'
 import { TokenManager } from './core/token-manager.js'
+import { startApiServer } from './api/index.js'
 
 // Module factories
 import { discordForwarderFactory } from './modules/discord-forwarder/index.js'
@@ -81,6 +82,28 @@ async function main() {
     }
     catch (err) {
       console.error(`Failed to start module ${module.name}:`, err)
+      process.exit(1)
+    }
+  }
+
+  // Start API server if enabled
+  const apiConfig = config.modules.api as any
+  if (apiConfig?.enabled) {
+    const jwtSecret = process.env.JWT_SECRET || apiConfig.jwtSecret || 'your-secret-key'
+    const port = process.env.API_PORT ? parseInt(process.env.API_PORT, 10) : (apiConfig.port || 3000)
+    const accountUuid = process.env.ACCOUNT_UUID || apiConfig.accountUuid
+
+    try {
+      await startApiServer({
+        port,
+        jwtSecret,
+        stateStore,
+        tokenManager,
+        accountUuid,
+      })
+    }
+    catch (err) {
+      console.error('Failed to start API server:', err)
       process.exit(1)
     }
   }
