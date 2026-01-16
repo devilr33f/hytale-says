@@ -24,7 +24,7 @@ const jwtSecret = process.env.JWT_SECRET || 'your-secret-key'
 
 const payload = {
   scope: scopes,
-  sub: 'test-client',
+  sub: 'starkow',
   iat: Math.floor(Date.now() / 1000),
   exp: Math.floor(Date.now() / 1000) + (expirationHours * 3600),
 }

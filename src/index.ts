@@ -11,6 +11,7 @@ import { discordForwarderFactory } from './modules/discord-forwarder/index.js'
 import { hytaleDownloaderFactory } from './modules/hytale-downloader/index.js'
 import { hytaleLauncherFactory } from './modules/hytale-launcher/index.js'
 import { hytalePatchesFactory } from './modules/hytale-patches/index.js'
+import { hytalePresskitFactory } from './modules/hytale-presskit/index.js'
 import { hytaleServerFactory } from './modules/hytale-server/index.js'
 
 const MODULE_FACTORIES: Record<string, (config: unknown, deps: import('./core/module.js').ModuleDependencies) => Module> = {
@@ -18,6 +19,7 @@ const MODULE_FACTORIES: Record<string, (config: unknown, deps: import('./core/mo
   'hytale-launcher': hytaleLauncherFactory,
   'hytale-patches': hytalePatchesFactory,
   'hytale-downloader': hytaleDownloaderFactory,
+  'hytale-presskit': hytalePresskitFactory,
   'hytale-server': hytaleServerFactory,
 }
 
