@@ -8,6 +8,8 @@ export class StateStore {
   private dirty = new Set<string>()
   private persistTimer: NodeJS.Timeout | null = null
   private loaded = false
+  private writeInProgress = false
+  private pendingWrite = false
 
   async load(): Promise<void> {
     if (this.loaded) {
@@ -57,8 +59,16 @@ export class StateStore {
     this.persistTimer = null
 
     if (this.dirty.size === 0) {
+      this.writeInProgress = false
       return
     }
+
+    if (this.writeInProgress) {
+      this.pendingWrite = true
+      return
+    }
+
+    this.writeInProgress = true
 
     // Write full state, not just dirty keys (atomicity)
     const toSave: Record<string, unknown> = {}
@@ -66,15 +76,31 @@ export class StateStore {
       toSave[key] = value
     }
 
-    try {
-      // Atomic write: temp file + rename
-      const tmpFile = `${STATE_FILE}.tmp`
-      await fs.writeFile(tmpFile, JSON.stringify(toSave, null, 2))
-      await fs.rename(tmpFile, STATE_FILE)
-      this.dirty.clear()
+    const retries = 3
+    const backoffMs = [100, 300, 500]
+
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        // Direct write without temp file (Windows EBUSY workaround)
+        await fs.writeFile(STATE_FILE, JSON.stringify(toSave, null, 2))
+        this.dirty.clear()
+        break
+      }
+      catch (err) {
+        const error = err as NodeJS.ErrnoException
+        if (error.code === 'EBUSY' && attempt < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, backoffMs[attempt]))
+          continue
+        }
+        console.error('[StateStore] Failed to write state file:', err)
+      }
     }
-    catch (err) {
-      console.error('[StateStore] Failed to write state file:', err)
+
+    this.writeInProgress = false
+
+    if (this.pendingWrite) {
+      this.pendingWrite = false
+      await this.persist()
     }
   }
 
