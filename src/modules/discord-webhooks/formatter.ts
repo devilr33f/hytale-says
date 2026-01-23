@@ -6,7 +6,7 @@ import type { ServerUpdate } from '../hytale-server/tracker.js'
 import type { DiscordEmbed } from './types.js'
 
 const HYTALE_ORANGE = 0xF26430
-const HYTALE_LOGO = 'https://hytale.com/favicon.png'
+const HYTALE_LOGO = 'https://hytale.com/favicon.ico'
 
 export function formatLauncherEmbed(update: LauncherUpdate): DiscordEmbed {
   return {
