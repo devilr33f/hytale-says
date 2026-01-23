@@ -101,3 +101,15 @@ export interface ApiContext {
   scope: string
   sub?: string
 }
+
+export interface DiscordWebhooksConfig extends ModuleConfig {
+  enabled: boolean
+  webhooks: WebhookDestination[]
+  batchDelayMs?: number
+}
+
+export interface WebhookDestination {
+  name: string
+  url: string
+  events: string[]
+}

@@ -1,21 +1,23 @@
-import type { Module } from './core/module.js'
+import type { Module, ModuleDependencies, WebhooksModule } from './core/module.js'
 import process from 'node:process'
+import { startApiServer } from './api/index.js'
 import { config } from './config.js'
 import { StateStore } from './core/state-store.js'
 import { TelegramClient } from './core/telegram-client.js'
 import { TokenManager } from './core/token-manager.js'
-import { startApiServer } from './api/index.js'
 
 // Module factories
 import { discordForwarderFactory } from './modules/discord-forwarder/index.js'
+import { discordWebhooksFactory } from './modules/discord-webhooks/index.js'
 import { hytaleDownloaderFactory } from './modules/hytale-downloader/index.js'
 import { hytaleLauncherFactory } from './modules/hytale-launcher/index.js'
 import { hytalePatchesFactory } from './modules/hytale-patches/index.js'
 import { hytalePresskitFactory } from './modules/hytale-presskit/index.js'
 import { hytaleServerFactory } from './modules/hytale-server/index.js'
 
-const MODULE_FACTORIES: Record<string, (config: unknown, deps: import('./core/module.js').ModuleDependencies) => Module> = {
+const MODULE_FACTORIES: Record<string, (config: unknown, deps: ModuleDependencies) => Module> = {
   'discord-forwarder': discordForwarderFactory,
+  'discord-webhooks': discordWebhooksFactory,
   'hytale-launcher': hytaleLauncherFactory,
   'hytale-patches': hytalePatchesFactory,
   'hytale-downloader': hytaleDownloaderFactory,
@@ -48,14 +50,25 @@ async function main() {
     console.log(`[${module}] ${message}`, ...args)
   }
 
-  const deps = {
+  const deps: ModuleDependencies = {
     telegram,
     tokenManager,
     stateStore,
     logger,
   }
 
+  // Initialize discord-webhooks first if enabled (other modules depend on it)
+  const webhooksConfig = config.modules['discord-webhooks']
+  if (webhooksConfig?.enabled) {
+    const webhooksModule = discordWebhooksFactory(webhooksConfig, deps) as WebhooksModule
+    modules.push(webhooksModule)
+    deps.webhooks = webhooksModule
+    console.log(`Loaded module: ${webhooksModule.name}`)
+  }
+
   for (const [moduleName, moduleConfig] of Object.entries(config.modules)) {
+    if (moduleName === 'discord-webhooks')
+      continue
     if (!moduleConfig.enabled) {
       continue
     }
@@ -92,7 +105,7 @@ async function main() {
   const apiConfig = config.modules.api as any
   if (apiConfig?.enabled) {
     const jwtSecret = process.env.JWT_SECRET || apiConfig.jwtSecret || 'your-secret-key'
-    const port = process.env.API_PORT ? parseInt(process.env.API_PORT, 10) : (apiConfig.port || 3000)
+    const port = process.env.API_PORT ? Number.parseInt(process.env.API_PORT, 10) : (apiConfig.port || 3000)
     const accountUuid = process.env.ACCOUNT_UUID || apiConfig.accountUuid
 
     try {

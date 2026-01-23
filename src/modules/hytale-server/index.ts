@@ -1,5 +1,6 @@
 import type { Module, ModuleDependencies } from '../../core/module.js'
 import type { HytaleServerConfig } from '../../types.js'
+import { formatServerEmbed } from '../discord-webhooks/formatter.js'
 import { formatServerUpdate } from './formatter.js'
 import { checkServerUpdate } from './tracker.js'
 
@@ -74,6 +75,9 @@ export function hytaleServerFactory(
           chatIds: this.config.chatIds,
           disableLinkPreview: true,
         })
+        if (this.dependencies.webhooks) {
+          await this.dependencies.webhooks.send('server', formatServerEmbed(update))
+        }
         this.dependencies.logger(this.name, `Update detected: ${update.patchline} ${update.version}`)
       }
     }

@@ -1,5 +1,6 @@
 import type { Module, ModuleDependencies } from '../../core/module.js'
 import type { HytalePatchesConfig } from '../../types.js'
+import { formatPatchesEmbed } from '../discord-webhooks/formatter.js'
 import { formatPatchesUpdate } from './formatter.js'
 import { checkPatchesUpdate } from './tracker.js'
 
@@ -74,6 +75,9 @@ export function hytalePatchesFactory(
           chatIds: this.config.chatIds,
           disableLinkPreview: true,
         })
+        if (this.dependencies.webhooks) {
+          await this.dependencies.webhooks.send('patches', formatPatchesEmbed(update))
+        }
         this.dependencies.logger(this.name, `Update detected: ${update.patchline} ${update.version}`)
       }
     }

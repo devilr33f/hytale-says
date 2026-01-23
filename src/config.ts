@@ -103,6 +103,23 @@ function loadConfig(): Config {
         throw new TypeError(`${moduleName} missing chatIds array`)
       }
     }
+
+    if (moduleName === 'discord-webhooks') {
+      if (!Array.isArray(mc.webhooks)) {
+        throw new TypeError(`discord-webhooks missing webhooks array`)
+      }
+      for (const webhook of mc.webhooks as Array<{ name?: string, url?: string, events?: string[] }>) {
+        if (typeof webhook.name !== 'string') {
+          throw new TypeError(`discord-webhooks webhook missing name`)
+        }
+        if (typeof webhook.url !== 'string') {
+          throw new TypeError(`discord-webhooks webhook missing url`)
+        }
+        if (!Array.isArray(webhook.events)) {
+          throw new TypeError(`discord-webhooks webhook ${webhook.name} missing events array`)
+        }
+      }
+    }
   }
 
   return config

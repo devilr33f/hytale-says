@@ -13,11 +13,16 @@ export interface ModuleFactory {
   (config: unknown, deps: ModuleDependencies): Module
 }
 
+export interface WebhooksModule extends Module {
+  send: (eventType: string, embed: unknown) => Promise<void>
+}
+
 export interface ModuleDependencies {
   telegram: TelegramClient
   tokenManager?: TokenManager
   stateStore: StateStore
   logger: Logger
+  webhooks?: WebhooksModule
 }
 
 export type Logger = (module: string, message: string, ...args: unknown[]) => void

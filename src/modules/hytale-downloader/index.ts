@@ -1,5 +1,6 @@
 import type { Module, ModuleDependencies } from '../../core/module.js'
 import type { HytaleTrackerConfig } from '../../types.js'
+import { formatDownloaderEmbed } from '../discord-webhooks/formatter.js'
 import { formatDownloaderUpdate } from './formatter.js'
 import { checkDownloaderUpdate } from './tracker.js'
 
@@ -64,6 +65,9 @@ export function hytaleDownloaderFactory(
           chatIds: this.config.chatIds,
           disableLinkPreview: true,
         })
+        if (this.dependencies.webhooks) {
+          await this.dependencies.webhooks.send('downloader', formatDownloaderEmbed(update))
+        }
         this.dependencies.logger(this.name, `Update detected: ${update.version}`)
       }
     }

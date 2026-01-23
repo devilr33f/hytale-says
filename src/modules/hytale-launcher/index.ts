@@ -1,5 +1,6 @@
 import type { Module, ModuleDependencies } from '../../core/module.js'
 import type { HytaleTrackerConfig } from '../../types.js'
+import { formatLauncherEmbed } from '../discord-webhooks/formatter.js'
 import { formatLauncherUpdate } from './formatter.js'
 import { checkLauncherUpdate } from './tracker.js'
 
@@ -64,6 +65,9 @@ export function hytaleLauncherFactory(
           chatIds: this.config.chatIds,
           disableLinkPreview: true,
         })
+        if (this.dependencies.webhooks) {
+          await this.dependencies.webhooks.send('launcher', formatLauncherEmbed(update))
+        }
         this.dependencies.logger(this.name, `Update detected: ${update.version}`)
       }
     }
