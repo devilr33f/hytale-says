@@ -9,6 +9,7 @@ import { TokenManager } from './core/token-manager.js'
 // Module factories
 import { discordForwarderFactory } from './modules/discord-forwarder/index.js'
 import { discordWebhooksFactory } from './modules/discord-webhooks/index.js'
+import { hytaleBlogFactory } from './modules/hytale-blog/index.js'
 import { hytaleDownloaderFactory } from './modules/hytale-downloader/index.js'
 import { hytaleLauncherFactory } from './modules/hytale-launcher/index.js'
 import { hytalePatchesFactory } from './modules/hytale-patches/index.js'
@@ -18,6 +19,7 @@ import { hytaleServerFactory } from './modules/hytale-server/index.js'
 const MODULE_FACTORIES: Record<string, (config: unknown, deps: ModuleDependencies) => Module> = {
   'discord-forwarder': discordForwarderFactory,
   'discord-webhooks': discordWebhooksFactory,
+  'hytale-blog': hytaleBlogFactory,
   'hytale-launcher': hytaleLauncherFactory,
   'hytale-patches': hytalePatchesFactory,
   'hytale-downloader': hytaleDownloaderFactory,

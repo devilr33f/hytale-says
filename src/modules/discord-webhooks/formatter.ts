@@ -1,9 +1,11 @@
+import type { BlogPost } from '../hytale-blog/tracker.js'
 import type { DownloaderUpdate } from '../hytale-downloader/tracker.js'
 import type { LauncherUpdate } from '../hytale-launcher/tracker.js'
 import type { PatchesUpdate } from '../hytale-patches/tracker.js'
 import type { PresskitUpdate } from '../hytale-presskit/tracker.js'
 import type { ServerUpdate } from '../hytale-server/tracker.js'
 import type { DiscordEmbed } from './types.js'
+import { getBlogUrl, getThumbnailUrl } from '../hytale-blog/tracker.js'
 
 const HYTALE_ORANGE = 0xF26430
 const HYTALE_LOGO = 'https://hytale.com/favicon.ico'
@@ -104,4 +106,21 @@ function formatBytes(bytes: number): string {
   const value = absBytes / k ** i
   const sign = bytes < 0 ? '-' : ''
   return `${sign}${value.toFixed(i > 0 ? 2 : 0)} ${sizes[i]}`
+}
+
+export function formatBlogEmbed(post: BlogPost): DiscordEmbed {
+  const url = getBlogUrl(post)
+  const imageUrl = getThumbnailUrl(post)
+
+  const embed: DiscordEmbed = {
+    title: post.title,
+    description: `*by **${post.author}***\n\n[Read the full post](${url})`,
+    color: HYTALE_ORANGE,
+  }
+
+  if (imageUrl) {
+    embed.image = { url: imageUrl }
+  }
+
+  return embed
 }

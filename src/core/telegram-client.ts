@@ -7,6 +7,21 @@ export interface SendMessageOptions {
   topicId?: number
   parseMode?: 'Markdown' | 'MarkdownV2' | 'HTML'
   disableLinkPreview?: boolean
+  buttons?: InlineButton[][]
+}
+
+export interface SendPhotoOptions {
+  photoUrl: string
+  caption: string
+  chatIds: (string | ChatDestination)[]
+  topicId?: number
+  parseMode?: 'Markdown' | 'MarkdownV2' | 'HTML'
+  buttons?: InlineButton[][]
+}
+
+export interface InlineButton {
+  text: string
+  url: string
 }
 
 export class TelegramClient {
@@ -21,7 +36,9 @@ export class TelegramClient {
   }
 
   async sendMessage(opts: SendMessageOptions): Promise<void> {
-    const { text, chatIds, topicId, parseMode = 'HTML', disableLinkPreview = false } = opts
+    const { text, chatIds, topicId, parseMode = 'HTML', disableLinkPreview = false, buttons } = opts
+
+    const replyMarkup = buttons ? { inline_keyboard: buttons } : undefined
 
     await Promise.all(chatIds.map((dest) => {
       const chatId = typeof dest === 'string' ? dest : dest.chatId
@@ -33,6 +50,27 @@ export class TelegramClient {
         message_thread_id: threadId,
         parse_mode: parseMode,
         link_preview_options: { is_disabled: disableLinkPreview },
+        reply_markup: replyMarkup,
+      })
+    }))
+  }
+
+  async sendPhoto(opts: SendPhotoOptions): Promise<void> {
+    const { photoUrl, caption, chatIds, topicId, parseMode = 'HTML', buttons } = opts
+
+    const replyMarkup = buttons ? { inline_keyboard: buttons } : undefined
+
+    await Promise.all(chatIds.map((dest) => {
+      const chatId = typeof dest === 'string' ? dest : dest.chatId
+      const threadId = typeof dest === 'string' ? topicId : dest.topicId
+
+      return this.client.api.sendPhoto({
+        chat_id: chatId,
+        photo: photoUrl,
+        caption,
+        message_thread_id: threadId,
+        parse_mode: parseMode,
+        reply_markup: replyMarkup,
       })
     }))
   }

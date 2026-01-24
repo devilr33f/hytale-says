@@ -83,6 +83,12 @@ export interface HytaleServerConfig extends HytaleTrackerConfig {
   patchlines: string[]
 }
 
+export interface HytaleBlogConfig extends ModuleConfig {
+  enabled: boolean
+  pollIntervalMinutes: number
+  chatIds: (string | ChatDestination)[]
+}
+
 export interface ApiConfig extends ModuleConfig {
   enabled: boolean
   port: number

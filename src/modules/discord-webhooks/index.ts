@@ -1,14 +1,14 @@
 import type { Module, ModuleDependencies } from '../../core/module.js'
-import type { DiscordEmbed, DiscordWebhooksConfig } from './types.js'
+import type { DiscordMessage, DiscordWebhooksConfig } from './types.js'
 import { sendWebhook } from './sender.js'
 
 export interface DiscordWebhooksModule extends Module {
-  send: (eventType: string, embed: DiscordEmbed) => Promise<void>
+  send: (eventType: string, message: DiscordMessage) => Promise<void>
 }
 
 interface QueuedMessage {
   eventType: string
-  embed: DiscordEmbed
+  message: DiscordMessage
 }
 
 export function discordWebhooksFactory(
@@ -60,11 +60,11 @@ export function discordWebhooksFactory(
       this.running = false
     }
 
-    async send(eventType: string, embed: DiscordEmbed): Promise<void> {
+    async send(eventType: string, message: DiscordMessage): Promise<void> {
       if (!this.running)
         return
 
-      this.queue.push({ eventType, embed })
+      this.queue.push({ eventType, message })
 
       // Schedule flush if not already scheduled
       if (!this.flushTimer) {
@@ -86,16 +86,16 @@ export function discordWebhooksFactory(
 
       // Group messages by webhook based on event filtering
       for (const webhook of this.config.webhooks) {
-        const relevantEmbeds = messages
+        const relevantMessages = messages
           .filter(m => webhook.events.includes('*') || webhook.events.includes(m.eventType))
-          .map(m => m.embed)
+          .map(m => m.message)
 
-        if (relevantEmbeds.length === 0)
+        if (relevantMessages.length === 0)
           continue
 
         try {
-          await sendWebhook(webhook.url, relevantEmbeds)
-          this.dependencies.logger(this.name, `Sent ${relevantEmbeds.length} embed(s) to ${webhook.name}`)
+          await sendWebhook(webhook.url, relevantMessages, webhook.mentionRoles)
+          this.dependencies.logger(this.name, `Sent ${relevantMessages.length} message(s) to ${webhook.name}`)
         }
         catch (err) {
           this.dependencies.logger(this.name, `Failed to send to ${webhook.name}: ${err}`)
