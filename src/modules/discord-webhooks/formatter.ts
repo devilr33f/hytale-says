@@ -7,14 +7,14 @@ import type { ServerUpdate } from '../hytale-server/tracker.js'
 import type { DiscordEmbed } from './types.js'
 import { getBlogUrl, getThumbnailUrl } from '../hytale-blog/tracker.js'
 
-const HYTALE_ORANGE = 0xF26430
+const EMBED_COLOR = 0x64A7D1
 const HYTALE_LOGO = 'https://hytale.com/favicon.ico'
 
 export function formatLauncherEmbed(update: LauncherUpdate): DiscordEmbed {
   return {
     title: 'Launcher Update',
     description: `New launcher version available`,
-    color: HYTALE_ORANGE,
+    color: EMBED_COLOR,
     fields: [
       { name: 'Version', value: `\`${update.version}\``, inline: true },
       { name: 'Previous', value: `\`${update.previousVersion}\``, inline: true },
@@ -39,7 +39,7 @@ export function formatPatchesEmbed(update: PatchesUpdate): DiscordEmbed {
   return {
     title: 'Game Patches Update',
     description: `New game patch available for ${update.patchline}`,
-    color: HYTALE_ORANGE,
+    color: EMBED_COLOR,
     fields,
     thumbnail: { url: HYTALE_LOGO },
     timestamp: new Date().toISOString(),
@@ -50,7 +50,7 @@ export function formatServerEmbed(update: ServerUpdate): DiscordEmbed {
   return {
     title: 'Server Software Update',
     description: `New server version for ${update.patchline}`,
-    color: HYTALE_ORANGE,
+    color: EMBED_COLOR,
     fields: [
       { name: 'Patchline', value: `\`${update.patchline}\``, inline: true },
       { name: 'Version', value: `\`${update.version}\``, inline: true },
@@ -65,7 +65,7 @@ export function formatDownloaderEmbed(update: DownloaderUpdate): DiscordEmbed {
   return {
     title: 'Downloader Update',
     description: `New downloader version available`,
-    color: HYTALE_ORANGE,
+    color: EMBED_COLOR,
     fields: [
       { name: 'Version', value: `\`${update.version}\``, inline: true },
       { name: 'Previous', value: `\`${update.previousVersion}\``, inline: true },
@@ -89,7 +89,7 @@ export function formatPresskitEmbed(update: PresskitUpdate): DiscordEmbed {
   return {
     title: 'Creator Presskit Update',
     description: `Presskit archive has been updated`,
-    color: HYTALE_ORANGE,
+    color: EMBED_COLOR,
     fields,
     thumbnail: { url: HYTALE_LOGO },
     timestamp: new Date().toISOString(),
@@ -115,7 +115,7 @@ export function formatBlogEmbed(post: BlogPost): DiscordEmbed {
   const embed: DiscordEmbed = {
     title: post.title,
     description: `*by **${post.author}***\n\n[Read the full post](${url})`,
-    color: HYTALE_ORANGE,
+    color: EMBED_COLOR,
   }
 
   if (imageUrl) {
