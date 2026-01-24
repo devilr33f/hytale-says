@@ -8,7 +8,7 @@ import type { DiscordEmbed } from './types.js'
 import { getBlogUrl, getThumbnailUrl } from '../hytale-blog/tracker.js'
 
 const EMBED_COLOR = 0x64A7D1
-const HYTALE_LOGO = 'https://hytale.com/favicon.ico'
+const HYTALE_LOGO = 'https://files.femboy.page/hytale-logo.png'
 
 export function formatLauncherEmbed(update: LauncherUpdate): DiscordEmbed {
   return {
@@ -116,6 +116,8 @@ export function formatBlogEmbed(post: BlogPost): DiscordEmbed {
     title: post.title,
     description: `*by **${post.author}***\n\n[Read the full post](${url})`,
     color: EMBED_COLOR,
+    footer: { text: 'Published' },
+    timestamp: post.publishedAt,
   }
 
   if (imageUrl) {
