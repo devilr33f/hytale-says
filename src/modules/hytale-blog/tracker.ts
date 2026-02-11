@@ -24,7 +24,7 @@ const STATE_KEY = 'hytale-blog'
 const MAX_SEEN_IDS = 100
 
 export async function checkBlogUpdates(stateStore: StateStore): Promise<BlogPost[]> {
-  const response = await fetch(ENDPOINT)
+  const response = await fetch(`${ENDPOINT}?_=${Date.now()}`)
   if (!response.ok) {
     throw new Error(`Blog endpoint returned ${response.status}`)
   }
