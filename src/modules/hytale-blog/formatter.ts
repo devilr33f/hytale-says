@@ -1,7 +1,7 @@
 import type { BlogPost } from './tracker.js'
 
-function formatDate(isoDate: string): string {
-  const date = new Date(isoDate)
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr)
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const month = months[date.getUTCMonth()]
   const day = date.getUTCDate()
@@ -22,8 +22,6 @@ export function formatBlogUpdate(post: BlogPost): string {
   return `<b>📰 New Blog Post</b>
 
 <b>${escapeHtml(post.title)}</b>
-By ${escapeHtml(post.author)}
 
-<b>Published:</b> ${formatDate(post.publishedAt)}
-<b>Created:</b> ${formatDate(post.createdAt)}`
+<b>Published:</b> ${formatDate(post.pubDate)}`
 }

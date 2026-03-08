@@ -5,7 +5,6 @@ import type { PatchesUpdate } from '../hytale-patches/tracker.js'
 import type { PresskitUpdate } from '../hytale-presskit/tracker.js'
 import type { ServerUpdate } from '../hytale-server/tracker.js'
 import type { DiscordEmbed } from './types.js'
-import { getBlogUrl, getThumbnailUrl } from '../hytale-blog/tracker.js'
 
 const EMBED_COLOR = 0x64A7D1
 const HYTALE_LOGO = 'https://files.femboy.page/hytale-logo.png'
@@ -109,20 +108,11 @@ function formatBytes(bytes: number): string {
 }
 
 export function formatBlogEmbed(post: BlogPost): DiscordEmbed {
-  const url = getBlogUrl(post)
-  const imageUrl = getThumbnailUrl(post)
-
-  const embed: DiscordEmbed = {
+  return {
     title: post.title,
-    description: `*by **${post.author}***\n\n[Read the full post](${url})`,
+    description: `[Read the full post](${post.link})`,
     color: EMBED_COLOR,
     footer: { text: 'Published' },
-    timestamp: post.publishedAt,
+    timestamp: post.pubDate,
   }
-
-  if (imageUrl) {
-    embed.image = { url: imageUrl }
-  }
-
-  return embed
 }

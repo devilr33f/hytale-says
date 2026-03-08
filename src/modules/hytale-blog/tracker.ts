@@ -1,72 +1,80 @@
 import type { StateStore } from '../../core/state-store.js'
 
 export interface BlogPost {
-  _id: string
   title: string
-  author: string
-  slug: string
-  publishedAt: string
-  createdAt: string
-  coverImage?: {
-    variants: string[]
-    s3Key: string
-  }
-  bodyExcerpt: string
+  link: string
+  guid: string
+  description: string
+  pubDate: string
 }
 
 interface BlogState {
-  seenIds: string[]
+  seenGuids: string[]
   lastCheck: string
 }
 
-const ENDPOINT = 'https://hytale.com/api/blog/post/published'
+const RSS_URL = 'https://hytale.com/rss.xml'
 const STATE_KEY = 'hytale-blog'
-const MAX_SEEN_IDS = 100
+const MAX_SEEN = 100
 
-export async function checkBlogUpdates(stateStore: StateStore): Promise<BlogPost[]> {
-  const response = await fetch(`${ENDPOINT}?_=${Date.now()}`)
-  if (!response.ok) {
-    throw new Error(`Blog endpoint returned ${response.status}`)
+function parseItems(xml: string): BlogPost[] {
+  const items: BlogPost[] = []
+  const itemRegex = /<item>([\s\S]*?)<\/item>/g
+
+  for (const match of xml.matchAll(itemRegex)) {
+    const block = match[1]
+    const tag = (name: string) =>
+      block.match(new RegExp(`<${name}>([\\s\\S]*?)<\\/${name}>`))?.[1]?.trim() ?? ''
+
+    items.push({
+      title: unescape(tag('title')),
+      link: tag('link'),
+      guid: tag('guid'),
+      description: unescape(tag('description')),
+      pubDate: tag('pubDate'),
+    })
   }
 
-  const posts = await response.json() as BlogPost[]
-  const state = stateStore.get<BlogState>(STATE_KEY)
-  const seenIds = new Set(state?.seenIds ?? [])
+  return items
+}
 
-  // First run: mark all current posts as seen, don't notify
+function unescape(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&apos;/g, '\'')
+    .replace(/&quot;/g, '"')
+}
+
+export async function checkBlogUpdates(stateStore: StateStore): Promise<BlogPost[]> {
+  const response = await fetch(RSS_URL, {
+    headers: { 'user-agent': 'HytaleSays/1.0' },
+  })
+  if (!response.ok) {
+    throw new Error(`rss feed returned ${response.status}`)
+  }
+
+  const xml = await response.text()
+  const posts = parseItems(xml)
+  const state = stateStore.get<BlogState>(STATE_KEY)
+  const seenGuids = new Set(state?.seenGuids ?? [])
+
   if (!state) {
-    const allIds = posts.map(p => p._id).slice(0, MAX_SEEN_IDS)
-    stateStore.set(STATE_KEY, { seenIds: allIds, lastCheck: new Date().toISOString() })
+    const allGuids = posts.map(p => p.guid).slice(0, MAX_SEEN)
+    stateStore.set(STATE_KEY, { seenGuids: allGuids, lastCheck: new Date().toISOString() })
     return []
   }
 
-  // Find new posts
-  const newPosts = posts.filter(p => !seenIds.has(p._id))
+  const newPosts = posts.filter(p => !seenGuids.has(p.guid))
 
   if (newPosts.length > 0) {
-    // Add new IDs to seen list, keep bounded
-    const updatedIds = [...newPosts.map(p => p._id), ...state.seenIds].slice(0, MAX_SEEN_IDS)
-    stateStore.set(STATE_KEY, { seenIds: updatedIds, lastCheck: new Date().toISOString() })
+    const updatedGuids = [...newPosts.map(p => p.guid), ...state.seenGuids].slice(0, MAX_SEEN)
+    stateStore.set(STATE_KEY, { seenGuids: updatedGuids, lastCheck: new Date().toISOString() })
   }
   else {
-    // Just update check time
     stateStore.set(STATE_KEY, { ...state, lastCheck: new Date().toISOString() })
   }
 
   return newPosts
-}
-
-export function getBlogUrl(post: BlogPost): string {
-  const date = new Date(post.publishedAt)
-  const year = date.getUTCFullYear()
-  const month = date.getUTCMonth() + 1
-  return `https://hytale.com/news/${year}/${month}/${post.slug}`
-}
-
-export function getThumbnailUrl(post: BlogPost): string | undefined {
-  if (!post.coverImage?.variants?.length || !post.coverImage.s3Key) {
-    return undefined
-  }
-  const variant = post.coverImage.variants.at(-1)
-  return `https://cdn.hytale.com/variants/${variant}_${post.coverImage.s3Key}`
 }
